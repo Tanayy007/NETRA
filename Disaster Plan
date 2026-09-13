@@ -1,0 +1,111 @@
+# Goal Description
+
+To build an "AI-Driven Disaster Intelligence & 3D Digital Twin Platform" for the NDRF and District Disaster Management Authorities (DDMA). The goal is to solve the critical operational bottleneck of fragmented information during a disaster. By fusing official alerts (SACHET), local authority updates, meteorological data, satellite imagery, and public reports, the platform provides **ONE verified, structured, and actionable 3D situation picture**.
+
+### The SIH Winning Angle
+This project stands out for SIH because:
+1.  **Focus on Operational Command, Not Just Alerting:** It doesn't just alert citizens; it builds a C4I (Command, Control, Communications, Computers, and Intelligence) system for responders.
+2.  **Ground Truth Priority:** It acknowledges the reality that 60% of actionable intelligence comes from local authorities (DDMA, Police) and prioritizes this over noisy social media data.
+3.  **Pragmatic Data Integration:** It uses a smart mix of real (where available) and simulated (where restricted) data, showcasing architectural readiness without getting blocked by bureaucratic API access during the hackathon.
+4.  **AI Data Fusion:** It moves beyond simple dashboards by actively clustering, verifying, and scoring the confidence of multi-modal data streams to generate automated Disaster Briefs.
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Hackathon Scope vs. Production Scope:** Building a full 3D Digital Twin with real-time AI fusion is a massive undertaking. For the hackathon, we must focus on a "Golden Path" demo. Do you agree to focus the MVP on **one specific simulated disaster scenario (e.g., Severe Urban Flood in Pune)** to demonstrate the full pipeline perfectly, rather than trying to build generic support for all disaster types initially?
+
+> [!WARNING]
+> **Data Sources:** We will implement a `DEMO MODE` toggle. In Demo Mode, the system will ingest pre-scripted, realistic JSON payloads simulating SACHET, IMD, and Sentinel data to ensure a flawless presentation. Are you comfortable with this approach for the SIH finals?
+
+---
+
+## Architecture & Technology Stack
+
+The platform will use a modern, scalable microservices architecture.
+
+### 1. Frontend (Command Dashboard & Digital Twin)
+*   **Framework:** Next.js (React) with TypeScript.
+*   **Styling:** Tailwind CSS for a modern, dark-mode, high-contrast operational UI.
+*   **2D Mapping / Basic GIS:** Mapbox GL JS (or MapLibre GL JS for open-source compliance).
+*   **3D Digital Twin:** CesiumJS (for rendering 3D terrain, buildings, and volumetric disaster overlays).
+*   **State Management:** Zustand or React Context for real-time state updates.
+
+### 2. Backend (Data Ingestion & APIs)
+*   **Framework:** FastAPI (Python) - highly performant, excellent for AI integration and async data pipelines.
+*   **Real-time Comms:** WebSockets (via FastAPI) to push live updates to the Command Dashboard.
+*   **Task Queue:** Celery with Redis (for handling background tasks like satellite image processing or Twitter scraping).
+
+### 3. Database (Geospatial & Relational)
+*   **Primary DB:** PostgreSQL with the **PostGIS** extension. Crucial for spatial queries (e.g., "Find all hospitals within the flooded polygon").
+*   **Caching:** Redis (for fast retrieval of the live incident state).
+
+### 4. AI & Data Fusion Engine
+*   **NLP / Info Extraction:** SpaCy or a lightweight HuggingFace LLM (e.g., Llama-3-8B-Instruct or Mistral if resources permit, or GPT-4o-mini via API) to extract entities (Location, Casualties, Road Status) from unstructured text (Media, X).
+*   **Clustering / Correlation:** DBSCAN (Density-Based Spatial Clustering of Applications with Noise) or simple geo-hashing combined with time-windowing to group reports into single incidents.
+*   **Satellite/CV (Simulated for MVP):** OpenCV/Rasterio for processing Sentinel-1 SAR data (water masking). For the hackathon, we will likely pre-process "Before/After" GeoTIFFs to show the result rather than running the heavy compute live.
+
+---
+
+## Data Integration Strategy (India Context)
+
+| Data Source | Type | Integration Strategy for Hackathon |
+| :--- | :--- | :--- |
+| **SACHET** | Alerts | Parse standard CAP-XML/RSS. Use simulated SACHET payloads for the demo scenario. |
+| **Local Authority** | Ground Truth | Direct input via our secure DDMA Web Portal module. (Highest Confidence). |
+| **IMD** | Weather | Scrape public IMD web dashboards or use OpenWeatherMap as a proxy. Label as "Meteorological Data". |
+| **ISRO / Bhuvan / Sentinel** | Satellite | Pre-download Sentinel-1/2 imagery for the demo area. Serve processed flood-extent GeoJSONs. |
+| **OpenStreetMap (OSM)** | Base GIS | Extract roads, buildings, and critical infrastructure (hospitals, schools) via Overpass API into PostGIS. |
+| **X / Media** | Secondary Intel | Use Tweepy (if API available) or simulate a stream of Tweets and News RSS feeds for the AI to ingest. |
+
+---
+
+## Proposed Implementation Phases (Hackathon Roadmap)
+
+### Phase 1: Foundation & Base GIS (Days 1-2)
+*   Initialize Next.js frontend and FastAPI backend.
+*   Set up PostgreSQL + PostGIS.
+*   Import OSM data (Roads, Buildings, Hospitals) for the target demo city (e.g., Pune) into PostGIS.
+*   Create the foundational database schemas (`Incident`, `SourceReport`, `InfrastructureStatus`).
+
+### Phase 2: Data Ingestion & AI Fusion Engine (Days 3-5)
+*   Build ingestion endpoints for standard formats (CAP-XML, JSON).
+*   **The Core Logic:** Implement the clustering algorithm. When a new report comes in, check if it falls within `X` km and `Y` hours of an existing incident.
+*   Implement the **Confidence Scoring System** (e.g., Local Authority = +50%, SACHET = +30%, X Report = +5%, min 3 X reports needed to flag).
+*   Develop the LLM prompt chain to generate the "Ready-Made NDRF Disaster Brief".
+
+### Phase 3: The 3D Digital Twin (Frontend) (Days 6-8)
+*   Integrate CesiumJS/Mapbox.
+*   Render the 3D terrain and buildings.
+*   Create visualization layers:
+    *   **Polygons:** Affected areas (colored by severity).
+    *   **Lines:** Road status (Green, Yellow, Red).
+    *   **Points:** Incident markers and Trapped/Rescued population counters.
+*   Implement the "Active Incidents" sidebar and details panel.
+
+### Phase 4: Local Authority Module (Day 9)
+*   Create a simple, mobile-responsive authenticated portal for DDMA/Police.
+*   Include forms to update: Affected Population, Road Status, Resource Requests.
+*   Implement the Audit Trail (who updated what and when).
+
+### Phase 5: "Golden Path" Demo Polish (Days 10-14)
+*   Create the "Demo Mode" simulation script. This script will sequentially fire WebSockets to the frontend, simulating a developing disaster over 5 minutes (e.g., 1. Weather Warning -> 2. Social Media panic -> 3. SACHET Alert -> 4. Local Authority Confirmation -> 5. Satellite Extent Update -> 6. AI Recommendation).
+*   Refine UI/UX for maximum visual impact (Glassmorphism, dark themes, clear typography).
+
+---
+
+## Verification Plan
+
+### Automated Tests
+*   **Fusion Logic:** Unit tests to ensure 5 different social media reports about the same location merge into 1 incident rather than creating 5 incidents.
+*   **Scoring Logic:** Unit tests to ensure an incident verified by DDMA achieves >90% confidence.
+
+### Manual Verification (The Demo Script)
+We will verify the system by running the following simulated timeline:
+1.  **T=0:** System is Green.
+2.  **T+1m:** Simulated IMD data shows heavy rain. AI flags Weather Risk.
+3.  **T+2m:** 5 simulated Tweets report waterlogging in "Ward 12". AI creates unverified Incident (Confidence 30%).
+4.  **T+3m:** Simulated SACHET Flood Alert arrives. Incident updates to "Under Verification" (Confidence 65%).
+5.  **T+4m:** *Manual Action:* Log in as DDMA Officer, confirm flood, update trapped count to 45. Incident updates to "OFFICIAL" (Confidence 95%), turns RED on the 3D map.
+6.  **T+5m:** AI generates the final NDRF Disaster Brief recommending deployment to Ward 12.
